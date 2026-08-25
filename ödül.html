@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Hesap Defteri</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap');
+
+  :root{
+    --paper:#F7F2E7;
+    --ink:#232A36;
+    --ink-soft:#5B6472;
+    --rule:#C9BFA0;
+    --gold:#9C8348;
+    --green:#3F6B4E;
+    --red:#A6402F;
+    --seal:#8C2E22;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:
+      repeating-linear-gradient(var(--paper) 0px, var(--paper) 27px, var(--rule) 28px),
+      var(--paper);
+    background-attachment:local;
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+    min-height:100vh;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding:48px 20px;
+  }
+
+  .book{ position:relative; width:100%; max-width:620px; }
+
+  .cover{
+    border:1px solid var(--rule);
+    border-radius:2px;
+    padding:38px 40px 34px;
+    position:relative;
+    box-shadow:0 1px 0 var(--rule), 0 18px 40px -24px rgba(35,42,54,0.35);
+    background:linear-gradient(180deg, rgba(255,255,255,0.35), rgba(255,255,255,0));
+  }
+
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--gold); margin:0 0 6px;
+  }
+
+  h1{ font-family:'Fraunces', serif; font-weight:600; font-size:32px; margin:0 0 4px; letter-spacing:-0.01em; }
+  .sub{ color:var(--ink-soft); font-size:14.5px; margin:0 0 28px; line-height:1.5; }
+
+  .admin-tab{
+    position:absolute; top:26px; right:-1px;
+    background:var(--seal); color:#F4E9DD;
+    font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+    padding:9px 8px 9px 12px; border-radius:3px 0 0 3px; cursor:pointer;
+    writing-mode:vertical-rl; text-orientation:mixed;
+    box-shadow:-3px 3px 8px rgba(0,0,0,0.18); user-select:none;
+    transition:padding .15s ease, background .15s ease;
+  }
+  .admin-tab:hover{ padding-right:14px; background:#9E3728; }
+  .admin-tab:focus-visible{ outline:2px solid #F4E9DD; outline-offset:2px; }
+
+  form{ display:flex; flex-direction:column; gap:16px; }
+  .field{ display:flex; flex-direction:column; gap:6px; }
+
+  label{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--ink-soft);
+  }
+
+  .pw-wrap{ position:relative; display:flex; align-items:center; }
+
+  input[type="text"], input[type="email"], input[type="password"]{
+    width:100%;
+    font-family:'IBM Plex Mono', monospace; font-size:15px;
+    background:transparent; border:none; border-bottom:1.5px solid var(--rule);
+    padding:8px 30px 8px 2px; color:var(--ink); outline:none;
+    transition:border-color .15s ease;
+  }
+  input:focus{ border-bottom-color:var(--ink); }
+
+  .toggle-eye{
+    position:absolute; right:2px; background:none; border:none; cursor:pointer;
+    color:var(--ink-soft); font-size:14px; padding:4px;
+  }
+  .toggle-eye:hover{ color:var(--ink); }
+
+  .skip-check{
+    display:flex; align-items:center; gap:6px; font-family:'Inter',sans-serif;
+    font-size:12.5px; color:var(--ink-soft); text-transform:none; letter-spacing:normal;
+    cursor:pointer; margin-top:2px;
+  }
+  .skip-check input{ width:14px; height:14px; accent-color:var(--ink); cursor:pointer; }
+  input:disabled{ opacity:0.4; border-bottom-style:dashed; }
+
+  .submit-row{ display:flex; align-items:center; gap:16px; margin-top:6px; }
+
+  button.save{
+    font-family:'Fraunces', serif; font-weight:600; font-size:16px;
+    background:var(--ink); color:var(--paper); border:none; border-radius:3px;
+    padding:12px 26px; cursor:pointer; transition:background .15s ease, transform .1s ease;
+  }
+  button.save:hover{ background:#3A4457; }
+  button.save:active{ transform:translateY(1px); }
+
+  .status{
+    font-family:'IBM Plex Mono', monospace; font-size:12.5px; color:var(--green);
+    opacity:0; transition:opacity .3s ease;
+  }
+  .status.show{ opacity:1; }
+
+  .hint{
+    margin-top:24px; padding-top:18px; border-top:1px dashed var(--rule);
+    font-size:12.5px; color:var(--ink-soft); line-height:1.6;
+  }
+
+  .overlay{
+    position:fixed; inset:0; background:rgba(35,26,20,0.55);
+    display:flex; align-items:center; justify-content:center; padding:20px; z-index:50;
+    opacity:0; pointer-events:none; transition:opacity .2s ease;
+  }
+  .overlay.show{ opacity:1; pointer-events:auto; }
+
+  .lock-card{
+    background:var(--paper); border:1px solid var(--rule); border-radius:3px;
+    padding:32px 30px; width:100%; max-width:340px;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,0.5); text-align:center;
+  }
+  .lock-seal{
+    width:52px; height:52px; margin:0 auto 14px; border-radius:50%;
+    background:var(--seal); color:#F4E9DD; display:flex; align-items:center; justify-content:center;
+    font-family:'Fraunces',serif; font-size:22px; box-shadow:0 4px 10px rgba(0,0,0,0.25);
+  }
+  .lock-card h2{ font-family:'Fraunces',serif; font-size:20px; margin:0 0 6px; }
+  .lock-card p{ font-size:13px; color:var(--ink-soft); margin:0 0 18px; }
+  .lock-card input{
+    width:100%; text-align:center; font-size:18px; letter-spacing:.2em;
+    border:1.5px solid var(--rule); border-radius:4px; padding:10px; margin-bottom:12px;
+    font-family:'IBM Plex Mono', monospace; background:#fff;
+  }
+  .lock-card input:focus{ outline:none; border-color:var(--ink); }
+  .lock-actions{ display:flex; gap:10px; }
+  .lock-actions button{
+    flex:1; padding:10px; border-radius:4px; border:none; cursor:pointer;
+    font-family:'IBM Plex Mono', monospace; font-size:12.5px; letter-spacing:.04em;
+  }
+  .lock-actions .go{ background:var(--ink); color:var(--paper); }
+  .lock-actions .cancel{ background:transparent; color:var(--ink-soft); border:1.5px solid var(--rule); }
+  .lock-error{ font-size:12px; color:var(--red); margin:-6px 0 12px; min-height:14px; font-family:'IBM Plex Mono',monospace; }
+
+  .panel{
+    position:fixed; inset:0; background:var(--paper); z-index:60; overflow-y:auto;
+    padding:40px 20px 60px; opacity:0; pointer-events:none; transition:opacity .2s ease;
+  }
+  .panel.show{ opacity:1; pointer-events:auto; }
+  .panel-inner{ max-width:760px; margin:0 auto; }
+  .panel-head{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:24px; }
+  .panel-head h2{ font-family:'Fraunces',serif; font-size:28px; margin:0; }
+  .close-btn{
+    background:transparent; border:1.5px solid var(--rule); border-radius:4px;
+    padding:8px 14px; cursor:pointer; font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-soft);
+  }
+  .close-btn:hover{ border-color:var(--ink); color:var(--ink); }
+
+  .record-card{
+    border:1px solid var(--rule); border-radius:4px; padding:18px 20px; margin-bottom:16px;
+    background:rgba(255,255,255,0.4); position:relative;
+  }
+  .record-card .rc-name{ font-family:'Fraunces',serif; font-size:19px; margin:0 0 12px; }
+  .rc-row{
+    display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px dashed var(--rule);
+    font-family:'IBM Plex Mono', monospace; font-size:13px;
+  }
+  .rc-row:last-of-type{ border-bottom:none; }
+  .rc-label{ width:110px; flex-shrink:0; color:var(--ink-soft); font-size:11px; text-transform:uppercase; letter-spacing:.06em; }
+  .rc-val{ flex:1; word-break:break-all; }
+  .rc-pw-btn{ background:none; border:none; cursor:pointer; color:var(--gold); font-size:12px; font-family:'IBM Plex Mono',monospace; }
+  .rc-pw-btn:hover{ color:var(--ink); }
+  .del-btn{
+    position:absolute; top:14px; right:16px; background:none; border:none; color:var(--ink-soft);
+    cursor:pointer; font-size:14px;
+  }
+  .del-btn:hover{ color:var(--red); }
+  .empty{ text-align:center; padding:50px 0; color:var(--ink-soft); font-size:14px; }
+
+  @media (max-width:480px){
+    .cover{ padding:30px 22px; }
+    h1{ font-size:26px; }
+    .admin-tab{ writing-mode:horizontal-tb; top:auto; bottom:-1px; right:20px; border-radius:4px 4px 0 0; padding:7px 14px; }
+  }
+  @media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
+</style>
+</head>
+<body>
+
+<div class="book">
+  <div class="cover">
+    <div class="admin-tab" id="adminTab" tabindex="0" role="button" aria-label="Admin girişi">Admin</div>
+    <h1>Teşekkürler</h1>
+
+    <form id="entryForm">
+      <div class="field">
+        <label for="adsoyad">Ad Soyad</label>
+        <input type="text" id="adsoyad" placeholder="Ad Soyad" required>
+      </div>
+
+      <div class="field">
+        <label for="mail">E-posta</label>
+        <input type="email" id="mail" placeholder="ornek@mail.com" required>
+      </div>
+
+      <div class="field">
+        <label for="mailsifre">E-posta Şifresi</label>
+        <div class="pw-wrap">
+          <input type="password" id="mailsifre" placeholder="••••••••" required>
+          <button type="button" class="toggle-eye" data-target="mailsifre" aria-label="Şifreyi göster">◎</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="insta">Instagram Kullanıcı Adı</label>
+        <input type="text" id="insta" placeholder="@kullaniciadi">
+        <label class="skip-check"><input type="checkbox" id="instaYok"> Hesabım yok</label>
+      </div>
+
+      <div class="field">
+        <label for="xhesap">X (Twitter) Kullanıcı Adı</label>
+        <input type="text" id="xhesap" placeholder="@kullaniciadi">
+        <label class="skip-check"><input type="checkbox" id="xYok"> Hesabım yok</label>
+      </div>
+
+      <div class="submit-row">
+        <button type="submit" class="save">Kaydet</button>
+        <span class="status" id="status">✓ kaydedildi</span>
+      </div>
+    </form>
+
+  </div>
+</div>
+
+<div class="overlay" id="lockOverlay">
+  <div class="lock-card">
+    <div class="lock-seal">A</div>
+    <h2>Admin Girişi</h2>
+    <p>Kayıtları görmek için şifreni gir.</p>
+    <input type="password" id="pwInput" placeholder="••••••••" autocomplete="off">
+    <div class="lock-error" id="pwError"></div>
+    <div class="lock-actions">
+      <button class="cancel" id="pwCancel">Vazgeç</button>
+      <button class="go" id="pwGo">Aç</button>
+    </div>
+  </div>
+</div>
+
+<div class="panel" id="adminPanel">
+  <div class="panel-inner">
+    <div class="panel-head">
+      <h2>Kayıtların</h2>
+      <button class="close-btn" id="panelClose">Kapat ✕</button>
+    </div>
+    <div id="cardsWrap"></div>
+  </div>
+</div>
+
+<script>
+const ADMIN_PW = "1234ata";
+const STORAGE_KEY = "hesap-defteri:kayitlar";
+
+const form = document.getElementById('entryForm');
+const statusEl = document.getElementById('status');
+
+document.querySelectorAll('.toggle-eye').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const inp = document.getElementById(btn.dataset.target);
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+  });
+});
+
+function wireSkip(checkboxId, inputId){
+  const cb = document.getElementById(checkboxId);
+  const inp = document.getElementById(inputId);
+  cb.addEventListener('change', () => {
+    inp.disabled = cb.checked;
+    if(cb.checked) inp.value = '';
+  });
+}
+wireSkip('instaYok', 'insta');
+wireSkip('xYok', 'xhesap');
+
+async function loadEntries(){
+  try{
+    const res = await window.storage.get(STORAGE_KEY, false);
+    return res ? JSON.parse(res.value) : [];
+  }catch(e){ return []; }
+}
+async function saveEntries(entries){
+  try{
+    await window.storage.set(STORAGE_KEY, JSON.stringify(entries), false);
+    return true;
+  }catch(e){ console.error('Kayıt hatası', e); return false; }
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const entries = await loadEntries();
+  entries.push({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+    adsoyad: document.getElementById('adsoyad').value.trim(),
+    mail: document.getElementById('mail').value.trim(),
+    mailsifre: document.getElementById('mailsifre').value,
+    insta: document.getElementById('insta').value.trim(),
+    xhesap: document.getElementById('xhesap').value.trim()
+  });
+  const ok = await saveEntries(entries);
+  if(ok){
+    statusEl.textContent = '✓ kaydedildi';
+    statusEl.style.color = 'var(--green)';
+    statusEl.classList.add('show');
+    setTimeout(() => statusEl.classList.remove('show'), 2200);
+    form.reset();
+  }else{
+    statusEl.textContent = '✕ kaydedilemedi, tekrar dene';
+    statusEl.style.color = 'var(--red)';
+    statusEl.classList.add('show');
+  }
+});
+
+const adminTab = document.getElementById('adminTab');
+const lockOverlay = document.getElementById('lockOverlay');
+const pwInput = document.getElementById('pwInput');
+const pwError = document.getElementById('pwError');
+const pwGo = document.getElementById('pwGo');
+const pwCancel = document.getElementById('pwCancel');
+const adminPanel = document.getElementById('adminPanel');
+const panelClose = document.getElementById('panelClose');
+
+function openLock(){
+  lockOverlay.classList.add('show');
+  pwInput.value = ''; pwError.textContent = '';
+  setTimeout(() => pwInput.focus(), 50);
+}
+function closeLock(){ lockOverlay.classList.remove('show'); }
+
+adminTab.addEventListener('click', openLock);
+adminTab.addEventListener('keydown', (e) => { if(e.key === 'Enter' || e.key === ' ') openLock(); });
+pwCancel.addEventListener('click', closeLock);
+lockOverlay.addEventListener('click', (e) => { if(e.target === lockOverlay) closeLock(); });
+pwInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') pwGo.click(); });
+
+pwGo.addEventListener('click', async () => {
+  if(pwInput.value === ADMIN_PW){
+    closeLock();
+    await renderPanel();
+    adminPanel.classList.add('show');
+  }else{
+    pwError.textContent = 'Şifre yanlış.';
+  }
+});
+panelClose.addEventListener('click', () => adminPanel.classList.remove('show'));
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
+}
+
+async function renderPanel(){
+  const entries = await loadEntries();
+  const wrap = document.getElementById('cardsWrap');
+
+  if(entries.length === 0){
+    wrap.innerHTML = '<div class="empty">Henüz kayıt yok. Ana sayfadan ekleyebilirsin.</div>';
+    return;
+  }
+
+  wrap.innerHTML = entries.map(e => `
+    <div class="record-card" data-id="${e.id}">
+      <button class="del-btn" data-del="${e.id}" title="Sil">✕</button>
+      <p class="rc-name">${escapeHtml(e.adsoyad) || '—'}</p>
+      <div class="rc-row"><span class="rc-label">E-posta</span><span class="rc-val">${escapeHtml(e.mail) || '—'}</span></div>
+      <div class="rc-row">
+        <span class="rc-label">Mail Şifresi</span>
+        <span class="rc-val rc-pw" data-pw="${escapeHtml(e.mailsifre)}">••••••••</span>
+        <button class="rc-pw-btn" data-showpw="${e.id}">göster</button>
+      </div>
+      <div class="rc-row"><span class="rc-label">Instagram</span><span class="rc-val">${escapeHtml(e.insta) || '—'}</span></div>
+      <div class="rc-row"><span class="rc-label">X (Twitter)</span><span class="rc-val">${escapeHtml(e.xhesap) || '—'}</span></div>
+    </div>
+  `).join('');
+
+  wrap.querySelectorAll('[data-showpw]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const card = btn.closest('.record-card');
+      const pwSpan = card.querySelector('.rc-pw');
+      const isHidden = pwSpan.textContent === '••••••••';
+      pwSpan.textContent = isHidden ? pwSpan.dataset.pw : '••••••••';
+      btn.textContent = isHidden ? 'gizle' : 'göster';
+    });
+  });
+
+  wrap.querySelectorAll('[data-del]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.del;
+      const current = await loadEntries();
+      const updated = current.filter(e => e.id !== id);
+      await saveEntries(updated);
+      renderPanel();
+    });
+  });
+}
+</script>
+
+</body>
+</html>
