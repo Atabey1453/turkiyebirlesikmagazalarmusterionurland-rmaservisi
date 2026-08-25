@@ -24,6 +24,10 @@ def save_entries(entries):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(entries, f, ensure_ascii=False, indent=2)
 
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+        
+
 
 BASE_STYLE = """
 <style>
